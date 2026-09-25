@@ -3,7 +3,7 @@
 
 Name: python-hf-xet
 # renovate: datasource=github-releases depName=huggingface/xet-core
-Version: 1.5.0
+Version: v1.6.0
 Release: 2%{?dist}
 Summary: Python bindings for Hugging Face Xet storage
 
