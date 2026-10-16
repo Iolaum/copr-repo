@@ -7,7 +7,7 @@
 
 Name: open-code
 # renovate: datasource=github-releases depName=anomalyco/opencode
-Version: 1.19.2
+Version: 1.19.3
 Release: 1%{?dist}
 Summary: The open source AI coding agent
 
