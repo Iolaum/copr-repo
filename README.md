@@ -10,8 +10,6 @@ Current published package status:
 
 | Package | Status |
 | --- | --- |
-| `bun` | [![Copr build status](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/bun/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/bun/) |
-| `llm-wiki` | [![Copr build status](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/llm-wiki/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/llm-wiki/) |
 | `open-code` | [![Copr build status](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/open-code/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/open-code/) |
 | `python-hf-xet` | [![Copr build status](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/python-hf-xet/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/python-hf-xet/) |
 | `python-huggingface-hub` | [![Copr build status](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/python-huggingface-hub/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/package/python-huggingface-hub/) |
@@ -68,38 +66,15 @@ opencode-cli --version  # compatibility name
 
 The v2 package upgrades the existing `open-code` package; it is not a side-by-side desktop. Another RPM owning `/usr/bin/opencode` must be resolved explicitly before installation. A user-local `opencode` earlier in `PATH` can shadow this package without an RPM conflict; check `type -a opencode` and choose which installation to use. The package does not remove other installations or edit profiles.
 
+The tested v2 CLI, desktop and local-plugin setup workflow does not require a
+separately installed system Bun package. See the
+[no-Bun validation report](docs/20261025-retire-bun-llm-wiki-validation.md) for
+exact versions, evidence and coverage limits.
+
 Desktop verification after install:
 
 - confirm `OpenCode` appears in the desktop launcher
 - launch `OpenCode` once to verify the desktop entry, icons, and bundled runtime work as expected
-
-### [LLM Wiki](https://github.com/nashsu/llm_wiki)
-
-- package name in this repository and in RPM metadata should be `llm-wiki`
-- initial approach: repackage the upstream Tauri-generated `.rpm` release
-- primary architecture: `x86_64`
-- preserve the upstream desktop application payload as-is for the first version
-- preserve the bundled `libpdfium.so` resource shipped by upstream
-
-This approach keeps the package aligned with upstream's existing release process while letting COPR publish an installable Fedora repository for the RPM artifact.
-
-Packaging note:
-
-- `llm-wiki` disables Fedora RPM strip-related BRP post-processing during rebuilds
-- this avoids mutating the upstream Tauri binary or bundled `libpdfium.so` payload while republishing the upstream RPM contents
-- the spec includes smoke checks for the executable, desktop file, and bundled PDFium resource
-
-Install on Fedora:
-
-```bash
-sudo dnf copr enable iolaum/aitoolkit
-sudo dnf install llm-wiki
-```
-
-Desktop verification after install:
-
-- confirm `LLM Wiki` appears in the desktop launcher
-- launch `LLM Wiki` once to verify the desktop entry, icons, bundled runtime, and PDF support work as expected
 
 ### [hf-xet](https://github.com/huggingface/xet-core)
 
@@ -150,44 +125,12 @@ python3 -c "import huggingface_hub"
 hf --help
 ```
 
-### [bun](https://github.com/oven-sh/bun)
+## Retired repository maintenance
 
-`bun` is packaged from upstream GitHub release binaries.
-
-- primary architecture: `x86_64`
-- secondary architecture: `aarch64` is planned but not yet enabled
-- `x86_64` will use the optimized upstream Linux `x64` release, not the baseline build
-- `aarch64` will use the standard upstream Linux ARM64 release once support is added
-
-This favors performance on modern `x86_64` systems over backward compatibility with older CPUs.
-
-Current Bun deployment status:
-
-- COPR package name: `bun`
-- current working chroot: `fedora-43-x86_64`
-- source package method: COPR SCM build from this repository
-
-Install on Fedora:
-
-```bash
-sudo dnf copr enable iolaum/aitoolkit
-sudo dnf install bun
-bun --version
-```
-
-or in Fedora Silverblue:
-
-```
-sudo curl -Lo /etc/yum.repos.d/iolaum-aitoolkit.repo \
-  https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/repo/fedora-$(rpm -E %fedora)/iolaum-aitoolkit-fedora-$(rpm -E %fedora).repo
-sudo rpm-ostree install bun
-```
-
-For Silverblue and related rpm-ostree systems, reboot into the new deployment or start a new shell session before verifying the install with `bun --version`.
-
-Project page:
-
-- `https://copr.fedorainfracloud.org/coprs/iolaum/aitoolkit/`
+`bun` and `llm-wiki` are no longer maintained by this repository. Existing
+installed copies and published COPR artifacts are not removed by this change.
+Retiring their live COPR rebuild paths is a separate operator task; see the
+[maintainer handoff](docs/developer.md#retired-package-copr-handoff).
 
 ## Intended repository layout
 
@@ -195,8 +138,6 @@ Each package now lives in its own directory so COPR package subdirectories, buil
 
 The repository is expected to grow into a small packaging repo with files such as:
 
-- `bun/bun.spec`
-- `llm-wiki/llm-wiki.spec`
 - `open-code/open-code.spec`
 - `python-hf-xet/python-hf-xet.spec`
 - `python-huggingface-hub/python-huggingface-hub.spec`
@@ -213,7 +154,7 @@ The intended workflow is:
 3. validate changes in CI with `rpmlint`, source fetching, and RPM builds
 4. review and merge the resulting pull request
 5. configure COPR packages to build from this repository with source type `SCM`, clone URL set to this GitHub repository, and `Committish` set to `main`
-6. set each package `subdirectory` to its package folder, such as `bun/`, `llm-wiki/`, `open-code/`, `python-hf-xet/`, or `python-huggingface-hub/`, and set the matching spec path inside that folder
+6. set each package `subdirectory` to its package folder, such as `open-code/`, `python-hf-xet/`, or `python-huggingface-hub/`, and set the matching spec path inside that folder
 7. enable `Webhook rebuild` for each COPR SCM package
 8. add the COPR webhook URL to the GitHub repository webhook settings with content type `application/json`
 9. let COPR rebuild from new commits on `main`, generate and host repository metadata for Fedora users, and publish the updated package
@@ -240,7 +181,7 @@ For automatic COPR rebuilds from GitHub:
 2. set `Source Type` to `SCM`
 3. set `Clone URL` to the GitHub repository URL
 4. set `Committish` to `main`
-5. set the package subdirectory to the package folder, such as `bun/`, `llm-wiki/`, `open-code/`, `python-hf-xet/`, or `python-huggingface-hub/`, and set the matching spec path inside that folder
+5. set the package subdirectory to the package folder, such as `open-code/`, `python-hf-xet/`, or `python-huggingface-hub/`, and set the matching spec path inside that folder
 6. enable `Webhook rebuild`
 7. copy the webhook URL shown by COPR
 8. add that URL in GitHub under repository `Settings` -> `Webhooks`

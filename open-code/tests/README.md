@@ -1,8 +1,8 @@
 # OpenCode packaging acceptance fixtures
 
 - `release-feed.test.cjs` tests the actual Renovate JSONata transform and all
-  five manager extractions. Run it using the disposable-container instructions
-  in [developer notes](../../docs/developer.md#opencode-release-feed-regression-checks).
+  three maintained manager extractions. Run it using the disposable-container
+  instructions in [developer notes](../../docs/developer.md#opencode-release-feed-regression-checks).
 - `fixtures/v1-session.json` is a synthetic v1.19.4 export: one session and one
   text message, with fixed identifiers and a non-secret marker. Import it with
   the actual published v1 CLI, then export it again to verify the source fixture
@@ -65,3 +65,53 @@ not a ready-state pass. No physical GPU or real Wayland acceptance is implied.
 
 The [dated validation report](../../docs/20261025-opencode-v2-fedora44-validation.md)
 records the exact tested artifacts, results, and coverage limitations.
+
+## No-system-Bun acceptance
+
+- `fixtures/no-bun-plugin/index.ts` uses the v2 `Plugin.define` setup hook to
+  write a fixed marker and the running version. No providers, model calls or
+  third-party npm dependencies are needed. The exclusive marker write requires
+  a fresh disposable profile for every run.
+- `check-no-bun.py` verifies all three installed CLI entry points, ownership and
+  compatibility symlink, then starts a bounded server and checks authenticated
+  `/api/config` plus the actual plugin setup effect. It checks package/PATH and
+  private-profile Bun absence before and after, and redacts the generated local
+  server password. Its container/non-root/profile guards must remain enabled.
+- `no-bun-runtime.sh` runs only as disposable container root. It installs the
+  candidate through ordinary DNF with Bun excluded, checks generated dependencies
+  and upstream desktop payload preservation, creates the unprivileged tester,
+  and invokes the focused checker and private-display desktop helper.
+- `no-bun-desktop.sh` runs only as that tester, under private Xvfb/D-Bus with
+  normal sandboxing. A screenshot is captured, not automatically declared ready;
+  inspect it for a usable rendered screen. No physical GPU or Wayland proof is
+  implied.
+
+Build the candidate in a separate disposable Fedora 44 build container using the
+normal packaging gates. Stage only its binary RPM and the matching untouched
+upstream desktop RPM in a non-secret temporary input directory. Do not reuse a
+build container as the runtime environment. From the repository root:
+
+```bash
+# Both paths are temporary directories outside the repository and host home.
+inputs=/tmp/copr-no-bun-inputs
+outputs=/tmp/copr-no-bun-evidence
+mkdir -p "$inputs" "$outputs"
+# Copy the built open-code-<version>-<release>.x86_64.rpm into "$inputs".
+# Copy its matching upstream desktop RPM as "$inputs/upstream-desktop.rpm".
+# There must be exactly one candidate binary RPM in the input directory.
+podman run --rm -i --timeout 900 \
+  -v "$PWD":/src:ro,z -v "$inputs":/input:ro,z -v "$outputs":/out:z \
+  --workdir /root registry.fedoraproject.org/fedora:44 \
+  bash < open-code/tests/no-bun-runtime.sh
+```
+
+The runner copies source and the desktop helper into container-local `/work`
+before dropping privileges. In particular, it does not ask the tester to traverse
+a mode-700 host temporary input directory. Keep input mounts read-only; do not
+relax host directory permissions or sandboxing to make a test pass.
+
+Record the candidate revision, exact RPM identity/hash and per-gate results.
+Inspect `desktop.png`, retain only sanitized evidence, and verify container
+cleanup on success and failure. Missing desktop/plugin/runtime coverage is a
+blocked gate, not a pass. This tests the local setup fixture and core workflows,
+not arbitrary plugins, Bun-dependent projects, inference or real profiles.

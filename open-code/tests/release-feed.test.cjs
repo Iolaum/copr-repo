@@ -63,7 +63,7 @@ test('inactive rollout fallbacks remain eligible', async () => {
   f.artifacts.forEach(a => { a.active = false; });
   assert.deepEqual(await evaluate(f), expected);
 });
-test('all five spec dependencies remain discoverable', () => {
+test('all three maintained spec dependencies remain discoverable', () => {
   const found = [];
   for (const manager of config.customManagers) {
     for (const pattern of manager.managerFilePatterns) {
@@ -78,8 +78,6 @@ test('all five spec dependencies remain discoverable', () => {
     }
   }
   assert.deepEqual(found.sort(), [
-    ['bun/bun.spec', 'oven-sh/bun'],
-    ['llm-wiki/llm-wiki.spec', 'nashsu/llm_wiki'],
     ['open-code/open-code.spec', 'opencode-desktop'],
     ['python-hf-xet/python-hf-xet.spec', 'huggingface/xet-core'],
     ['python-huggingface-hub/python-huggingface-hub.spec', 'huggingface_hub'],

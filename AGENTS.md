@@ -8,7 +8,7 @@ This repository maintains Fedora COPR packaging metadata and automation. It is n
 
 Agents should primarily modify:
 
-- package spec files under package directories such as `bun/` and `open-code/`
+- package spec files under package directories such as `open-code/`
 - `.github/workflows/`
 - `docs/`
 - `README.md`
@@ -22,7 +22,6 @@ Agents should not:
 
 ## Repository Layout
 
-- `bun/bun.spec`: package Bun from upstream GitHub release binaries
 - `open-code/open-code.spec`: repackage the upstream desktop RPM payload
 - `.github/workflows/check.yml`: CI installs RPM tooling, installs build deps, runs `rpmlint`, `spectool -Rg`, and `rpmbuild -ba`
 - `docs/developer.md`: maintainer notes for Renovate and COPR workflow
@@ -40,12 +39,6 @@ Agents should not:
 - Do not edit live COPR or GitHub settings from this repository. Document required manual configuration changes instead.
 
 ## Package-Specific Guardrails
-
-### bun
-
-- Package Bun from upstream GitHub release binaries, not from source, unless explicitly requested.
-- Keep the optimized Linux `x64` upstream artifact unless the task explicitly changes architecture strategy.
-- Preserve `%autochangelog` unless maintainers ask for a different changelog policy.
 
 ### open-code
 
