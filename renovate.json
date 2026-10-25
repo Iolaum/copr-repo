@@ -6,7 +6,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^bun/bun\\.spec$"],
+      "managerFilePatterns": ["/^bun/bun\\.spec$/"],
       "matchStrings": [
         "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
       ],
@@ -14,28 +14,29 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^open-code/open-code\\.spec$"],
+      "managerFilePatterns": ["/^open-code/open-code\\.spec$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\r?\\nVersion:[ \\t]+(?<currentValue>[0-9]+[.][0-9]+[.][0-9]+)(?:[ \\t]*\\r?\\n|$)"
+      ],
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^llm-wiki/llm-wiki\\.spec$/"],
       "matchStrings": [
         "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
       ]
     },
     {
       "customType": "regex",
-      "fileMatch": ["^llm-wiki/llm-wiki\\.spec$"],
+      "managerFilePatterns": ["/^python-hf-xet/python-hf-xet\\.spec$/"],
       "matchStrings": [
         "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
       ]
     },
     {
       "customType": "regex",
-      "fileMatch": ["^python-hf-xet/python-hf-xet\\.spec$"],
-      "matchStrings": [
-        "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
-      ]
-    },
-    {
-      "customType": "regex",
-      "fileMatch": ["^python-huggingface-hub/python-huggingface-hub\\.spec$"],
+      "managerFilePatterns": ["/^python-huggingface-hub/python-huggingface-hub\\.spec$/"],
       "matchStrings": [
         "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
       ]
@@ -45,6 +46,23 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
+    },
+    {
+      "matchDatasources": ["custom.opencode-desktop"],
+      "matchPackageNames": ["opencode-desktop"],
+      "versioning": "semver",
+      "allowedVersions": ">=2.0.0 <3.0.0",
+      "ignoreUnstable": true,
+      "rollbackPrs": false
     }
-  ]
+  ],
+  "customDatasources": {
+    "opencode-desktop": {
+      "defaultRegistryUrlTemplate": "https://opencode.ai/update/api/latest",
+      "format": "json",
+      "transformTemplates": [
+        "($ds := artifacts[channel = 'latest' and name = 'desktop' and distribution = 'opencode']; $cs := artifacts[channel = 'latest' and name = 'cli' and distribution = 'opencode']; $d := $ds[0]; $c := $cs[0]; $v := $d.version; $r := $lookup($d.metadata.files, 'opencode-desktop-linux-x86_64.rpm'); $t := $lookup($c.metadata.files, 'opencode-linux-x64.tar.gz'); $validFile := function($f, $name) { $type($f) = 'object' and $f.url = ('https://opencode.ai/files/bin/' & $v & '/' & $name) and $type($f.sha256) = 'string' and $contains($f.sha256, /^[0-9a-f]{64}$/) and $type($f.size) = 'number' and $f.size > 0 and $floor($f.size) = $f.size }; $ok := channel = 'latest' and $count($ds) = 1 and $count($cs) = 1 and $type($v) = 'string' and $contains($v, /^2[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)$/) and $v = $c.version and $validFile($r, 'opencode-desktop-linux-x86_64.rpm') and $validFile($t, 'opencode-linux-x64.tar.gz'); {'releases': $ok ? [{'version': $v, 'isStable': true}] : []})"
+      ]
+    }
+  }
 }

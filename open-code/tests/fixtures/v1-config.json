@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "share": "disabled",
+  "agent": {
+    "copr-fixture": {
+      "description": "COPR_MIGRATION_CONFIG_MARKER_20261025",
+      "mode": "subagent",
+      "prompt": "Keep the non-secret Fedora 44 migration marker.",
+      "permission": {
+        "bash": "deny"
+      }
+    }
+  }
+}

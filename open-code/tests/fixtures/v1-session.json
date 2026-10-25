@@ -1,0 +1,40 @@
+{
+  "info": {
+    "id": "ses_coprfixture20261025",
+    "slug": "copr-migration-fixture",
+    "projectID": "global",
+    "directory": "/home/tester/project",
+    "title": "COPR v1 migration fixture",
+    "version": "1.19.4",
+    "time": {
+      "created": 1792908000000,
+      "updated": 1792908000001
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "id": "msg_000000000001aaaaaaaaaaaaaa",
+        "sessionID": "ses_coprfixture20261025",
+        "role": "user",
+        "time": {
+          "created": 1792908000000
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "fixture-provider",
+          "modelID": "fixture-model"
+        }
+      },
+      "parts": [
+        {
+          "id": "prt_000000000001bbbbbbbbbbbbbb",
+          "sessionID": "ses_coprfixture20261025",
+          "messageID": "msg_000000000001aaaaaaaaaaaaaa",
+          "type": "text",
+          "text": "FEDORA44_COPR_V1_MIGRATION_MARKER_20261025"
+        }
+      ]
+    }
+  ]
+}
