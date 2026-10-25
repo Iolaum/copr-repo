@@ -6,26 +6,11 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^bun/bun\\.spec$/"],
-      "matchStrings": [
-        "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
-      ],
-      "extractVersionTemplate": "^bun-v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
       "managerFilePatterns": ["/^open-code/open-code\\.spec$/"],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\r?\\nVersion:[ \\t]+(?<currentValue>[0-9]+[.][0-9]+[.][0-9]+)(?:[ \\t]*\\r?\\n|$)"
       ],
       "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^llm-wiki/llm-wiki\\.spec$/"],
-      "matchStrings": [
-        "datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+Version:\\s+(?<currentValue>.*)"
-      ]
     },
     {
       "customType": "regex",

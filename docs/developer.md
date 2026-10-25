@@ -14,8 +14,6 @@ The current spec annotations live next to the `Version:` field and identify the 
 
 Each package owns its own directory so COPR subdirectory configuration, CI, and any future package-specific files stay isolated.
 
-- `bun/` with `bun/bun.spec`
-- `llm-wiki/` with `llm-wiki/llm-wiki.spec`
 - `open-code/` with `open-code/open-code.spec`
 - `python-hf-xet/` with `python-hf-xet/python-hf-xet.spec`
 - `python-huggingface-hub/` with `python-huggingface-hub/python-huggingface-hub.spec`
@@ -68,8 +66,8 @@ COPR packages in this repository should be configured as SCM packages that build
 - set `Source Type` to `SCM`
 - set `Clone URL` to the repository URL
 - set `Committish` to `main`
-- set the package `subdirectory` to its package folder, such as `bun/`, `llm-wiki/`, `open-code/`, `python-hf-xet/`, or `python-huggingface-hub/`
-- set the spec path inside that folder, such as `bun/bun.spec`, `llm-wiki/llm-wiki.spec`, `open-code/open-code.spec`, `python-hf-xet/python-hf-xet.spec`, or `python-huggingface-hub/python-huggingface-hub.spec`
+- set the package `subdirectory` to its package folder, such as `open-code/`, `python-hf-xet/`, or `python-huggingface-hub/`
+- set the spec path inside that folder, such as `open-code/open-code.spec`, `python-hf-xet/python-hf-xet.spec`, or `python-huggingface-hub/python-huggingface-hub.spec`
 - enable `Webhook rebuild` in the COPR package configuration
 - add the COPR webhook URL to the GitHub repository webhook settings with content type `application/json`
 
@@ -107,15 +105,6 @@ The CI workflow discovers package specs from the package directories rather than
 - a virtual-display startup does not prove physical GPU, Wayland, GNOME/KDE launcher integration, or real-profile migration compatibility
 - keep strip-related BRP post-processing disabled unless the rebuilt package is proven to preserve the upstream binary payloads correctly
 
-### llm-wiki
-
-- track upstream releases from `nashsu/llm_wiki`, not a fork
-- repackage the upstream Tauri-generated `LLM.Wiki-<version>-1.x86_64.rpm` release artifact
-- keep the package scoped to `x86_64` unless upstream release artifacts and repository architecture policy change together
-- preserve the upstream desktop payload and bundled `libpdfium.so` resource as-is
-- do not switch to rebuilding the Rust, Node, and Tauri application from source unless the repository intentionally adopts that heavier packaging workflow
-- keep strip-related BRP post-processing disabled unless the rebuilt package is proven to preserve the Tauri binary and bundled PDFium resource correctly
-
 ### python-hf-xet
 
 - keep the package naming Fedora-style: source package `python-hf-xet`, installable package `python3-hf-xet`
@@ -133,3 +122,23 @@ The CI workflow discovers package specs from the package directories rather than
 - reason: dynamic build requirements would pull `python3dist(hf-xet)` into `dnf builddep` resolution for CI, and GitHub Actions can only resolve that when the dependency has already been published in the COPR repo
 - current CI enables the published `iolaum/aitoolkit` COPR repository before `dnf builddep`, which is enough for already-published dependencies but does not validate same-PR changes to both a dependency package and a dependent package
 - revisit `%generate_buildrequires` only after CI can also resolve repo-local package outputs during the build-dependency phase
+
+## Retired-package COPR handoff
+
+Repository maintenance for `bun` and `llm-wiki` has ended. Their specs and
+Renovate managers are removed; historical reports and Git history remain.
+This does not uninstall existing copies or remove published RPMs/build history.
+
+Owner: Nikolaos or a separately authorized operator. Outside this repository PR:
+
+- Inspect each retired package’s SCM, webhook/rebuild settings and outstanding
+  builds/updates. Disable or retire only its rebuild paths; preserve maintained
+  packages and shared automation. Do not blindly delete the project-wide webhook.
+- Decide separately whether to retain published artifacts/history, provide a
+  retirement notice or migration guidance, and close outstanding update PRs.
+- Verify the resulting automation state and continued publication of maintained
+  packages; retain a separate operational report.
+
+Until that follow-up is completed, live jobs may still target the removed
+directories and fail after merge. Coordinate timing before merge; this change
+does not alter live COPR or GitHub settings.
