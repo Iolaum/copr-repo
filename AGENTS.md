@@ -65,7 +65,7 @@ Use a command like:
 podman run --rm -i \
   -v "$PWD":/src:ro,Z \
   --workdir /root \
-  fedora:43 \
+  fedora:44 \
   bash <<'EOF'
 set -euo pipefail
 

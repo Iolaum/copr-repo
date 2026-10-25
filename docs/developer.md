@@ -22,6 +22,38 @@ Each package owns its own directory so COPR subdirectory configuration, CI, and 
 
 Renovate configuration lives in `renovate.json`.
 
+### OpenCode release-feed regression checks
+
+Use a disposable Node container, with no credentials or host home mounted. The
+pinned Renovate version provides its actual JSONata dependency for the fixture
+suite. Tools and caches live only in the container; no host install is needed.
+
+```bash
+podman run --rm -i -v "$PWD":/src:ro,Z docker.io/library/node:24 bash <<'EOF'
+set -euo pipefail
+mkdir -p /work /tools
+cp -a /src/. /work/
+cd /tools
+npm install --no-audit --no-fund renovate@44.181.5
+export PATH="/tools/node_modules/.bin:$PATH"
+export NODE_PATH=/tools/node_modules
+export RENOVATE_CACHE_DIR=/tmp/renovate-cache
+cd /work
+renovate-config-validator --no-global --strict renovate.json
+node --test open-code/tests/release-feed.test.cjs
+LOG_LEVEL=debug renovate --platform=local --dry-run=extract --enabled-managers=custom.regex
+LOG_LEVEL=debug renovate --platform=local --dry-run=lookup --enabled-managers=custom.regex
+EOF
+```
+
+Extraction must still find every spec. Unauthenticated GitHub lookups may be
+reported as `github-token-required`; this is not an OpenCode lookup failure.
+For update-selection testing, change only the container copy's OpenCode version
+to an older v2 release and repeat lookup. Test a version ahead of the feed too;
+it must not propose a rollback. The fixture suite covers missing/duplicate
+records, wrong channel/major, prereleases, invalid versions, missing files,
+wrong versioned URLs, malformed hash/size metadata, and rollout fallbacks.
+
 ## Maintainer expectations
 
 - review Renovate pull requests before merge, especially for major upstream releases
@@ -47,7 +79,9 @@ The expected result is that each new commit to `main` triggers a COPR rebuild fo
 
 The CI workflow discovers package specs from the package directories rather than a shared `specs/` directory.
 
-- prefer running local validation in a temporary Fedora container with Podman rather than installing RPM tooling on the host
+- CI and local acceptance use Fedora 44 (`fedora:44`); the GitHub Actions runner remains Ubuntu 24.04
+- prefer running local validation in a temporary Fedora 44 container with Podman rather than installing RPM tooling on the host
+- changing the CI target does not modify COPR chroots or retire Fedora 43
 - start the container in an existing workdir such as `/root`, copy the repository into `/work`, and run validation from `/work`
 - enable the published `iolaum/aitoolkit` COPR repository before resolving build dependencies
 - full validation iterates over `*/*.spec`
@@ -58,11 +92,19 @@ The CI workflow discovers package specs from the package directories rather than
 
 ### open-code
 
-- track upstream releases from `anomalyco/opencode`
-- repackage the upstream `opencode-desktop-linux-x86_64.rpm` desktop artifact and install the matching `opencode-linux-x64.tar.gz` CLI artifact as `opencode-cli`
+- track stable v2 desktop publication, not the v1 GitHub Releases stream; Renovate reads `https://opencode.ai/update/api/latest`, the aggregate form of the same stable desktop and CLI records
+- the aggregate endpoint lets one native JSONata transform require exactly one matching stable desktop/CLI pair, both expected files, versioned URLs, SHA-256 metadata, and positive integer byte sizes; no hosted updater, custom script datasource, or channel change is involved
+- constrain updates to semver `>=2.0.0 <3.0.0`, ignore unstable releases, and disable rollback proposals; unavailable/malformed metadata must fail closed
+- metadata readiness is not executable or byte-integrity proof: source fetching and all three packaged CLI checks remain acceptance gates; recheck downloaded SHA-256 hashes for migration acceptance
+- repackage the version-pinned `https://opencode.ai/files/bin/<version>/opencode-desktop-linux-x86_64.rpm` and matching `opencode-linux-x64.tar.gz`; LICENSE comes from the corresponding `v<version>` Git tag
+- install the standalone CLI as `/usr/bin/opencode` and own the relative `/usr/bin/opencode-cli -> opencode` compatibility symlink; do not add package-wide Provides/Conflicts/Obsoletes merely for the command name
+- preserve `/opt/OpenCode/ai.opencode` and its private `resources/opencode-cli`; desktop entries use the desktop executable, not the public CLI
 - keep the package scoped to `x86_64` unless upstream release artifacts and repository architecture policy change together
 - preserve the upstream desktop payload under `/opt/OpenCode` as-is
-- keep CLI smoke checks meaningful so builds fail if the packaged CLI no longer reports the expected version or help output
+- check version, root help, and `service --help` for both public CLI names and the bundled CLI; v2 reports `opencode v<version>`
+- compare the extracted candidate `/opt/OpenCode` tree with the upstream RPM, including symlink targets; do not introduce build-ID links
+- test installation and v1 upgrades only in disposable Fedora containers with private home/XDG state; never mount the maintainer’s home, credentials, package database, desktop sockets, or user bus
+- a virtual-display startup does not prove physical GPU, Wayland, GNOME/KDE launcher integration, or real-profile migration compatibility
 - keep strip-related BRP post-processing disabled unless the rebuilt package is proven to preserve the upstream binary payloads correctly
 
 ### llm-wiki

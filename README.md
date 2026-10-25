@@ -41,11 +41,12 @@ It is not used to:
 
 
 - package name in this repository and in RPM metadata should be `open-code`
-- approach: repackage the upstream desktop `.rpm` release and install the matching standalone CLI release artifact
+- approach: repackage stable **v2** desktop `.rpm` releases and install the matching standalone CLI artifact from `https://opencode.ai/files/bin/<version>/`
 - primary architecture: `x86_64`
 - secondary architecture: `aarch64` is planned but not yet enabled
 - preserve the upstream desktop application payload as-is
-- preserve the packaged `opencode-cli` command
+- expose the standalone CLI as `opencode`, with an RPM-owned `opencode-cli -> opencode` compatibility symlink
+- preserve the desktop’s private bundled `opencode-cli`; the desktop executable is `/opt/OpenCode/ai.opencode`, not either public CLI command
 
 This approach is chosen because it matches the current local workflow of consuming upstream release artifacts and publishing them as installable packages, while moving repository generation and hosting into COPR.
 
@@ -53,15 +54,19 @@ Packaging note:
 
 - `open-code` disables Fedora RPM strip-related BRP post-processing during rebuilds
 - this protects upstream-provided binary payloads from being modified during repackaging
-- the spec includes smoke checks to verify the packaged CLI still reports the expected OpenCode version and help output
+- the spec checks the version, root help, and service help of both public CLI names and the desktop’s bundled CLI
+- Renovate follows the stable desktop update API, not the v1 GitHub Releases stream; the matching CLI must fetch and pass the build checks before an update is accepted
 
 Install on Fedora:
 
 ```bash
 sudo dnf copr enable iolaum/aitoolkit
 sudo dnf install open-code
-opencode-cli --version
+opencode --version
+opencode-cli --version  # compatibility name
 ```
+
+The v2 package upgrades the existing `open-code` package; it is not a side-by-side desktop. Another RPM owning `/usr/bin/opencode` must be resolved explicitly before installation. A user-local `opencode` earlier in `PATH` can shadow this package without an RPM conflict; check `type -a opencode` and choose which installation to use. The package does not remove other installations or edit profiles.
 
 Desktop verification after install:
 
@@ -244,7 +249,7 @@ For automatic COPR rebuilds from GitHub:
 
 ## Local validation
 
-The repository uses GitHub Actions to validate spec changes.
+The repository uses GitHub Actions to validate spec changes in a Fedora 44 container on the Ubuntu 24.04 runner. This CI target does not retire any configured COPR chroot.
 
 Prefer running the same checks in a temporary Fedora container with Podman so the host worktree stays clean and the toolchain stays close to CI.
 
@@ -252,7 +257,7 @@ Prefer running the same checks in a temporary Fedora container with Podman so th
 podman run --rm -i \
   -v "$PWD":/src:ro,Z \
   --workdir /root \
-  fedora:43 \
+  fedora:44 \
   bash <<'EOF'
 set -euo pipefail
 
