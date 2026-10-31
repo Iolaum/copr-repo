@@ -7,7 +7,7 @@
 
 Name: open-code
 # renovate: datasource=custom.opencode-desktop depName=opencode-desktop
-Version: 2.2.4
+Version: 2.2.5
 Release: 1%{?dist}
 Summary: The open source AI coding agent
 
